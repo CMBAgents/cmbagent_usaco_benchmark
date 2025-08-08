@@ -1,0 +1,8 @@
+data/diverse_tests/
+data/test_for_long_problem/
+data/usaco_tests/
+data/diverse_test_samples.json
+data/long_pb.json
+data/usaco_clean_307.json
+**/__pycache__/
+.env

@@ -1,0 +1,26 @@
+{
+  "0001_easy_addition": {
+    "problem_id": "0001_easy_addition",
+    "problem_level": "bronze",
+    "description": "Given two integers A and B, output their sum.",
+    "num_tests": 3
+  },
+  "0002_easy_max": {
+    "problem_id": "0002_easy_max",
+    "problem_level": "bronze",
+    "description": "Given two integers, output the maximum.",
+    "num_tests": 2
+  },
+  "0003_easy_even_check": {
+    "problem_id": "0003_easy_even_check",
+    "problem_level": "bronze",
+    "description": "Given an integer, output '1' if it is even, otherwise output '0'.",
+    "num_tests": 2
+  },
+  "0004_easy_diff": {
+    "problem_id": "0004_easy_diff",
+    "problem_level": "bronze",
+    "description": "Given two integers, output the absolute difference.",
+    "num_tests": 2
+  }
+}

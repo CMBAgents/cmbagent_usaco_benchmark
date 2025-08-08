@@ -1,0 +1,6 @@
+json_file_path: /mnt/p/stage/cmbagent_usaco_benchmark/data/easy_custom_samples.json
+test_cases_folder_path: /mnt/p/stage/cmbagent_usaco_benchmark/data/easy_tests
+problem:
+    selection_type: "random"
+    count: 2
+agents: [planning_and_control,gpt-4.1-mini-2025-04-14,oneshot-gpt-4o-2024-08-06]

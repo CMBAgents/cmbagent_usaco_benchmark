@@ -1,0 +1,59 @@
+openai_gpt:
+  gpt-4.1-2025-04-14:
+    name: "gpt-4.1-2025-04-14"
+    max_input_tokens: 200000
+    max_output_tokens: 16384
+    input_price_per_1m: 10.00  # USD per 1M input tokens
+    output_price_per_1m: 30.00  # USD per 1M output tokens
+    
+  gpt-4.1-mini-2025-04-14:
+    name: "gpt-4.1-mini-2025-04-14" 
+    max_input_tokens: 200000
+    max_output_tokens: 16384
+    input_price_per_1m: 0.15   # USD per 1M input tokens
+    output_price_per_1m: 0.60  # USD per 1M output tokens
+    
+  gpt-4o-2024-08-06:
+    name: "gpt-4o-2024-08-06"
+    max_input_tokens: 128000
+    max_output_tokens: 16384
+    input_price_per_1m: 5.00   # USD per 1M input tokens
+    output_price_per_1m: 15.00 # USD per 1M output tokens
+    
+  gpt-4o-mini-2024-07-18:
+    name: "gpt-4o-mini-2024-07-18"
+    max_input_tokens: 128000
+    max_output_tokens: 16384
+    input_price_per_1m: 0.15   # USD per 1M input tokens
+    output_price_per_1m: 0.60  # USD per 1M output tokens
+
+# Future model categories will be added here:
+anthropic_claude:
+  claude-sonnet-4-20250514:
+    name: "claude-sonnet-4-20250514"
+    max_input_tokens: 200000
+    max_output_tokens: 8192
+    input_price_per_1m: 3.00   # USD per 1M input tokens (estimated)
+    output_price_per_1m: 15.00 # USD per 1M output tokens (estimated)
+    
+  claude-3-7-sonnet-20250219:
+    name: "claude-3-7-sonnet-20250219"
+    max_input_tokens: 200000
+    max_output_tokens: 8192
+    input_price_per_1m: 3.00   # USD per 1M input tokens
+    output_price_per_1m: 15.00 # USD per 1M output tokens
+
+# google-gemini: 
+#   	gemini-2.5-pro:
+#       name: "gemini-2.5-pro"
+#       max_input_tokens: 1048576
+#       max_output_tokens: 65536
+#       input_price_per_1m: 1.25   # USD per 1M input tokens (estimated), FOR PROMPTS <=200K TOKENS
+#       output_price_per_1m: 10.00 # USD per 1M output tokens (estimated), FOR PROMPTS <=200K TOKENS
+
+# handling 'oneshot' and 'planning_and_control' as categories because they don't have the same structure
+oneshot:
+  name: "oneshot"
+
+planning_and_control:
+  name: "planning_and_control"
