@@ -162,6 +162,7 @@ def get_llm_response(prompt: str, agent: str, llm_clients: dict, llm_token_price
                 getattr(response.usage, 'completion_tokens', 0)
             )
         },
+        #gem
         'anthropic_claude': {
             'client': llm_clients.get('anthropic_claude'),
             'call': lambda client: client.messages.create(
