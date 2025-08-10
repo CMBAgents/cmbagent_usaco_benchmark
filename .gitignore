@@ -6,3 +6,5 @@ data/long_pb.json
 data/usaco_clean_307.json
 **/__pycache__/
 .env
+LIVE_OUTPUT.txt
+benchmark_output/

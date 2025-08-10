@@ -43,13 +43,13 @@ anthropic_claude:
     input_price_per_1m: 3.00   # USD per 1M input tokens
     output_price_per_1m: 15.00 # USD per 1M output tokens
 
-# google-gemini: 
-#   	gemini-2.5-pro:
-#       name: "gemini-2.5-pro"
-#       max_input_tokens: 1048576
-#       max_output_tokens: 65536
-#       input_price_per_1m: 1.25   # USD per 1M input tokens (estimated), FOR PROMPTS <=200K TOKENS
-#       output_price_per_1m: 10.00 # USD per 1M output tokens (estimated), FOR PROMPTS <=200K TOKENS
+google-gemini: 
+  	gemini-2.5-pro:
+      name: "gemini-2.5-pro"
+      max_input_tokens: 1048576
+      max_output_tokens: 65536
+      input_price_per_1m: 1.25   # USD per 1M input tokens (estimated), FOR PROMPTS <=200K TOKENS
+      output_price_per_1m: 10.00 # USD per 1M output tokens (estimated), FOR PROMPTS <=200K TOKENS
 
 # handling 'oneshot' and 'planning_and_control' as categories because they don't have the same structure
 oneshot:
