@@ -306,7 +306,7 @@ create_new_benchmark() {
         fi
     done
 
-    echo -e "\n\033[1;33mHow do you want the problems to be chosen?\033[0m"
+    echo -e "\n\033[1;33mHow do you want the problems to be chosen?\033[0m\n"
     echo -e "  (1) By level"
     echo -e "  (2) Randomly"
     echo -e "  (3) By problem ids"

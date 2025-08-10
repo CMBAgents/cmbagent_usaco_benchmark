@@ -103,6 +103,12 @@ for llm_type in llm_types:
             llm_clients['anthropic_claude'] = anthropic.Client(api_key=os.getenv('ANTHROPIC_API_KEY'))
         except ImportError:
             raise ImportError("Anthropic library is not installed. Please install it with 'pip install anthropic'.")
+    elif llm_type == 'google-gemini':
+        try:
+            from google import genai
+            llm_clients['google-gemini'] = genai.Client(api_key=os.getenv('GOOGLE_GEMINI_API_KEY'))
+        except ImportError:
+            raise ImportError("Google Gemini library is not installed. Please install it with 'pip install google-generativeai'.")
     elif llm_type in ['oneshot', 'planning_and_control']:
         # No client object needed, but add a placeholder to show it's a valid type
         llm_clients[llm_type] = None
