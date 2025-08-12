@@ -148,18 +148,6 @@ def get_llm_response(prompt: str, agent: str, llm_clients: dict, llm_token_price
         cmbagent_module = importlib.import_module('cmbagent')
 
     extraction_map = {
-        'google-gemini': {
-            'client': llm_clients.get('google-gemini'),
-            'call': lambda client: client.models.generate_content(
-                model=agent,
-                contents=prompt
-            ),
-            'extract_code': lambda response: extract_code_block(getattr(response, 'text', '')),
-            'extract_tokens': lambda response: (
-                getattr(getattr(response, 'usage_metadata', {}), 'prompt_token_count', 0),
-                getattr(getattr(response, 'usage_metadata', {}), 'candidates_token_count', 0)
-            )
-        },
         'openai_gpt': {
             'client': llm_clients.get('openai_gpt'),
             'call': lambda client: client.chat.completions.create(
@@ -229,6 +217,18 @@ Use engineer for whole analysis, and return final code with researcher at the ve
             'extract_code': lambda response: '',  # code will be read from file in run_benchmark.py
             'extract_tokens': lambda response: (
                 0, 0
+            )
+        },
+        'google-gemini': {
+            'client': llm_clients.get('google-gemini'),
+            'call': lambda client: client.models.generate_content(
+                model=agent,
+                contents=prompt
+            ),
+            'extract_code': lambda response: extract_code_block(getattr(response, 'text', '')),
+            'extract_tokens': lambda response: (
+                getattr(getattr(response, 'usage_metadata', None), 'prompt_token_count', 0) if hasattr(response, 'usage_metadata') else 0,
+                getattr(getattr(response, 'usage_metadata', None), 'candidates_token_count', 0) if hasattr(response, 'usage_metadata') else 0
             )
         },
     }

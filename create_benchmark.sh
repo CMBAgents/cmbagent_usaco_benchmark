@@ -19,14 +19,14 @@ get_valid_path() {
             elif [[ -n "$extension" && "$path" != *"$extension" ]]; then
                 echo "Invalid file type (not ending in $extension). Please enter a valid JSON file path:" >&2
             else
-                echo "$path"
+                printf "$path\n"
                 return
             fi
         elif [[ "$type" == "dir" ]]; then
             if [[ ! -d "$path" ]]; then
                 echo "Folder does not exist. Please enter a valid test cases folder path:" >&2
             else
-                echo "$path"
+                printf "$path\n"
                 return
             fi
         else
@@ -42,10 +42,10 @@ get_valid_number() {
     local number
     read -p "$prompt" number
     while ! [[ "$number" =~ ^[0-9]+$ ]]; do
-        echo "Invalid input. Please enter a valid number for ${prompt%:*}:"
+        printf "Invalid input. Please enter a valid number for ${prompt%:*}:\n"
         read -p "$prompt" number
     done
-    echo "$number"
+    printf "$number\n"
 }
 
 # Function to get valid level count with validation
@@ -56,9 +56,9 @@ get_valid_level_count() {
     while true; do
         count=$(get_valid_number "$level: ")
         if [[ "$count" -gt "$available" ]]; then
-            echo "You cannot select more $level problems than available ($available). Please enter a valid number:"
+            printf "You cannot select more $level problems than available ($available). Please enter a valid number:\n"
         else
-            echo "$count"
+            printf "$count\n"
             return
         fi
     done
@@ -84,12 +84,12 @@ select_by_level() {
     local real_silver_count="$3"
     local real_gold_count="$4"
     local real_platinum_count="$5"
-    echo "Choose number of problems by level:"
+    printf "Choose number of problems by level:\n"
     local bronze_count
     while true; do
         bronze_count=$(get_valid_number "Bronze: ")
         if [[ "$bronze_count" -gt "$real_bronze_count" ]]; then
-            echo "You cannot select more bronze problems than available ($real_bronze_count). Please enter a valid number:"
+            printf "You cannot select more bronze problems than available ($real_bronze_count). Please enter a valid number:\n"
         else
             break
         fi
@@ -98,7 +98,7 @@ select_by_level() {
     while true; do
         silver_count=$(get_valid_number "Silver: ")
         if [[ "$silver_count" -gt "$real_silver_count" ]]; then
-            echo "You cannot select more silver problems than available ($real_silver_count). Please enter a valid number:"
+            printf "You cannot select more silver problems than available ($real_silver_count). Please enter a valid number:\n"
         else
             break
         fi
@@ -107,7 +107,7 @@ select_by_level() {
     while true; do
         gold_count=$(get_valid_number "Gold: ")
         if [[ "$gold_count" -gt "$real_gold_count" ]]; then
-            echo "You cannot select more gold problems than available ($real_gold_count). Please enter a valid number:"
+            printf "You cannot select more gold problems than available ($real_gold_count). Please enter a valid number:\n"
         else
             break
         fi
@@ -116,7 +116,7 @@ select_by_level() {
     while true; do
         platinum_count=$(get_valid_number "Platinum: ")
         if [[ "$platinum_count" -gt "$real_platinum_count" ]]; then
-            echo "You cannot select more platinum problems than available ($real_platinum_count). Please enter a valid number:"
+            printf "You cannot select more platinum problems than available ($real_platinum_count). Please enter a valid number:\n"
         else
             break
         fi
@@ -143,7 +143,7 @@ select_randomly() {
         random_count=$(get_valid_number "How many problems do you want to select randomly? ")
         read -p "Want to avoid certain types of problem levels? (y/n) " avoid_levels
         while [[ "$avoid_levels" != "y" && "$avoid_levels" != "n" ]]; do
-            echo "Invalid input. Please enter 'y' or 'n':"
+            printf "Invalid input. Please enter 'y' or 'n':\n"
             read -p "Want to avoid certain types of problem levels? (y/n) " avoid_levels
         done
 
@@ -157,7 +157,7 @@ select_randomly() {
                 for level in "${levels_to_avoid[@]}"; do
                     if [[ "$level" != "bronze" && "$level" != "silver" && "$level" != "gold" && "$level" != "platinum" ]]; then
                         all_valid=false
-                        echo "Invalid level found: $level. Please only use 'bronze', 'silver', 'gold', 'platinum'."
+                        printf "Invalid level found: $level. Please only use 'bronze', 'silver', 'gold', 'platinum'.\n"
                         break
                     fi
                 done
@@ -184,11 +184,11 @@ select_randomly() {
                 esac
             done
             if [[ "$available_count" -eq 0 ]]; then
-                echo "No problems are available after avoidance. Please choose different levels to avoid."
+                printf "No problems are available after avoidance. Please choose different levels to avoid.\n"
                 continue
             fi
             if [[ "$random_count" -gt "$available_count" ]]; then
-                echo "You cannot select more problems ($random_count) than available after avoidance ($available_count). Please try again."
+                printf "You cannot select more problems ($random_count) than available after avoidance ($available_count). Please try again.\n"
                 continue
             fi
             printf "problem:\n    selection_type: \"random\"\n    count: %s\n    avoid_levels: [%s]\n" "$random_count" "$avoid_levels_list" >> "$benchmark_file"
@@ -196,7 +196,7 @@ select_randomly() {
         else
             available_count=$total_problem_count
             if [[ "$random_count" -gt "$available_count" ]]; then
-                echo "You cannot select more problems ($random_count) than available ($available_count). Please try again."
+                printf "You cannot select more problems ($random_count) than available ($available_count). Please try again.\n"
                 continue
             fi
             printf "problem:\n    selection_type: \"random\"\n    count: %s\n" "$random_count" >> "$benchmark_file"
@@ -213,12 +213,12 @@ select_by_ids() {
     local id
     local valid=false
 
-    echo "Enter problem IDs one by one. When you're done, type <end>."
+    printf "Enter problem IDs one by one. When you're done, type <end>.\n"
     while true; do
         read -p "ID: " id
         if [[ "$id" == "<end>" ]]; then
             if [ "${#problem_ids[@]}" -eq 0 ]; then
-                echo "Please provide at least one problem."
+                printf "Please provide at least one problem.\n"
                 continue
             else
                 break
@@ -228,7 +228,7 @@ select_by_ids() {
         if echo "$json_keys" | grep -qx "$id"; then
             problem_ids+=("$id")
         else
-            echo "ID doesn't exist."
+            printf "ID doesn't exist.\n"
         fi
     done
     # Join IDs with commas for YAML output
@@ -241,13 +241,13 @@ select_by_ids() {
 
 # Function to print the welcome message
 print_welcome_message() {
-    echo -e "\n\033[1;36m====================[ BENCHMARK SETUP ]====================\033[0m"
-    echo -e "\033[1;33mWhat do you want to do?\033[0m Available options:"
-    echo -e "\033[1;34mMenu:\033[0m"
-    echo ""
-    echo -e "  (1) Create new benchmark"
-    echo -e "  (2) Run existing benchmark preset (exact repeat)"
-    echo -e "\033[1;36m==========================================================\033[0m"
+    printf "\n\033[1;36m====================[ BENCHMARK SETUP ]====================\033[0m\n"
+    printf "\033[1;33mWhat do you want to do?\033[0m Available options:\n"
+    printf "\033[1;34mMenu:\033[0m\n"
+    printf "\n"
+    printf "  (1) Create new benchmark\n"
+    printf "  (2) Run existing benchmark preset (exact repeat)\n"
+    printf "\033[1;36m==========================================================\033[0m\n"
 }
 
 # Function to read the user's main choice
@@ -257,7 +257,7 @@ read_user_option_for_benchmark_type() {
     while [[ "$option" != "1" && "$option" != "2" ]]; do
         read -p $'\033[1;31mInvalid input. Please enter 1 or 2: \033[0m' option
     done
-    echo "$option"
+    printf "$option\n"
 }
 
 get_problem_counts() {
@@ -268,61 +268,62 @@ get_problem_counts() {
     silver=$(jq '[to_entries[] | select(.value.problem_level == "silver")] | length' "$json_file")
     gold=$(jq '[to_entries[] | select(.value.problem_level == "gold")] | length' "$json_file")
     platinum=$(jq '[to_entries[] | select(.value.problem_level == "platinum")] | length' "$json_file")
-    echo "$total $bronze $silver $gold $platinum"
+    printf "$total $bronze $silver $gold $platinum\n"
 }
 
 # Function to guide the user through creating a new benchmark
 create_new_benchmark() {
-    echo -e "\n\033[1;36mStarting configuration for new benchmark...\033[0m"
+    printf "\n\033[1;36mStarting configuration for new benchmark...\033[0m\n"
     mkdir -p "$SCRIPT_DIR/benchmark_output/configs"
     mkdir -p "$SCRIPT_DIR/benchmark_output/runs"
 
     local run_timestamp=$(date +%Y%m%d_%H%M%S)
+
     local config_file="$SCRIPT_DIR/benchmark_output/configs/config_${run_timestamp}.yaml"
     local run_dir="$SCRIPT_DIR/benchmark_output/runs/run_${run_timestamp}"
     mkdir -p "$run_dir"
     local run_file="$run_dir/run_${run_timestamp}.json"
     touch "$config_file"
-    echo -e "\033[1;32mConfig file created:\033[0m $config_file"
-    echo -e "\033[1;32mRun directory created:\033[0m $run_dir"
-    echo -e "\033[1;32mRun file created:\033[0m $run_file"
+    printf "\033[1;32mConfig file created:\033[0m $config_file\n"
+    printf "\033[1;32mRun directory created:\033[0m $run_dir\n"
+    printf "\033[1;32mRun file created:\033[0m $run_file\n"
 
-    # Initialize run file with config path
-    echo "{\"config_path\": \"$config_file\"}" > "$run_file"
+    # Initialize run file with config path (no newline in filename)
+    printf "{\"config_path\": \"$config_file\"}" > "$run_file"
 
     local json_file_path=$(get_valid_path "Please enter the path to the JSON file: " "file" ".json")
-    echo "json_file_path: $json_file_path" >> "$config_file"
-
     local test_cases_folder_path=$(get_valid_path "Please enter the path to the test cases folder: " "dir")
-    echo "test_cases_folder_path: $test_cases_folder_path" >> "$config_file"
+    # Write required keys to config file (no newline in filename)
+    printf "json_file_path: %s\n" "$json_file_path" > "$config_file"
+    printf "test_cases_folder_path: %s\n" "$test_cases_folder_path" >> "$config_file"
 
     # verify if all keys from the json exist in the list made out of the dir names from the test cases folder
     json_keys=$(jq -r 'keys[]' "$json_file_path")
     dir_names=$(ls -1 "$test_cases_folder_path")
     for key in $json_keys; do
         if ! echo "$dir_names" | grep -qx "$key"; then
-            echo "Missing test cases folder for problem: $key (is present in json but not in test cases folder)"
+            printf "Missing test cases folder for problem: $key (is present in json but not in test cases folder)\n"
             exit 1
         fi
     done
 
-    echo -e "\n\033[1;33mHow do you want the problems to be chosen?\033[0m\n"
-    echo -e "  (1) By level"
-    echo -e "  (2) Randomly"
-    echo -e "  (3) By problem ids"
+    printf "\n\033[1;33mHow do you want the problems to be chosen?\033[0m\n"
+    printf "  (1) By level\n"
+    printf "  (2) Randomly\n"
+    printf "  (3) By problem ids\n"
     local problem_choice
     read -p "Select an option (1-3): " problem_choice
     while [[ "$problem_choice" != "1" && "$problem_choice" != "2" && "$problem_choice" != "3" ]]; do
-        echo "Invalid input. Please enter 1, 2, or 3:"
+        printf "Invalid input. Please enter 1, 2, or 3:\n"
         read -p "Select an option (1-3): " problem_choice
     done
 
     read total bronze silver gold platinum < <(get_problem_counts "$json_file_path")
-    echo -e "\033[1;34mTotal problems:\033[0m $total"
-    echo -e "\033[1;33mBronze problems:\033[0m $bronze"
-    echo -e "\033[1;37mSilver problems:\033[0m $silver"
-    echo -e "\033[1;33mGold problems:\033[0m $gold"
-    echo -e "\033[1;35mPlatinum problems:\033[0m $platinum"
+    printf "\033[1;34mTotal problems:\033[0m $total\n"
+    printf "\033[1;33mBronze problems:\033[0m $bronze\n"
+    printf "\033[1;37mSilver problems:\033[0m $silver\n"
+    printf "\033[1;33mGold problems:\033[0m $gold\n"
+    printf "\033[1;35mPlatinum problems:\033[0m $platinum\n"
 
     local selected_problem_ids=()
     if [[ "$problem_choice" == "1" ]]; then
@@ -345,7 +346,7 @@ create_new_benchmark() {
         local random_count=$(get_valid_number "How many problems do you want to select randomly? ")
         read -p "Want to avoid certain types of problem levels? (y/n) " avoid_levels
         while [[ "$avoid_levels" != "y" && "$avoid_levels" != "n" ]]; do
-            echo "Invalid input. Please enter 'y' or 'n':"
+            printf "Invalid input. Please enter 'y' or 'n':\n"
             read -p "Want to avoid certain types of problem levels? (y/n) " avoid_levels
         done
         local avoid_str=""
@@ -366,13 +367,13 @@ create_new_benchmark() {
         fi
     elif [[ "$problem_choice" == "3" ]]; then
         # By ID
-        echo "Enter problem IDs one by one. When you're done, type <end>."
+        printf "Enter problem IDs one by one. When you're done, type <end>.\n"
         local ids_list=()
         while true; do
             read -p "ID: " id
             if [[ "$id" == "<end>" ]]; then
                 if [ "${#ids_list[@]}" -eq 0 ]; then
-                    echo "Please provide at least one problem."
+                    printf "Please provide at least one problem.\n"
                     continue
                 else
                     break
@@ -382,7 +383,7 @@ create_new_benchmark() {
             if echo "$json_keys" | grep -qx "$id"; then
                 ids_list+=("$id")
             else
-                echo "ID doesn't exist."
+                printf "ID doesn't exist.\n"
             fi
         done
         selected_problem_ids=( "${ids_list[@]}" )
@@ -397,12 +398,12 @@ create_new_benchmark() {
     local agent_names_array=()
     local agent_name
 
-    echo -e "\033[1;33mEnter agent names one by one. When you're done, type <end>.\033[0m"
+    printf "\033[1;33mEnter agent names one by one. When you're done, type <end>.\033[0m\n"
     while true; do
         read -p "Agent: " agent_name
         if [[ "$agent_name" == "<end>" ]]; then
             if [ "${#agent_names_array[@]}" -eq 0 ]; then
-                echo "Please provide at least one agent."
+                printf "Please provide at least one agent.\n"
                 continue
             else
                 break
@@ -426,9 +427,9 @@ create_new_benchmark() {
                 agent_names_array+=("$agent_name_trimmed")
             fi
         else
-            echo "Invalid agent name: '$agent_name_trimmed'. Please enter valid agent names from model_config.yaml, use oneshot-<model>, or planning_and_control."
-            echo -e "\033[1;31mInvalid agent name: '$agent_name_trimmed'. Please enter valid agent names from model_config.yaml, use oneshot-<model>, or planning_and_control.\033[0m"
-            echo -e "\033[1;31mPlease provide at least one agent.\033[0m"
+            printf "Invalid agent name: '$agent_name_trimmed'. Please enter valid agent names from model_config.yaml, use oneshot-<model>, or planning_and_control.\n"
+            printf "\033[1;31mInvalid agent name: '$agent_name_trimmed'. Please enter valid agent names from model_config.yaml, use oneshot-<model>, or planning_and_control.\033[0m\n"
+            printf "\033[1;31mPlease provide at least one agent.\033[0m\n"
         fi
     done
     # Join agent names with commas for YAML output
@@ -493,13 +494,13 @@ generate_problems_from_config() {
 
 # Function for running an existing benchmark
 run_existing_benchmark() {
-    echo "How do you want to run the existing benchmark?"
-    echo "(1) Use config YAML file (will generate new random problems based on settings)"
-    echo "(2) Use run JSON file (will use exact same problems as previous run)"
+    printf "How do you want to run the existing benchmark?\n"
+    printf "(1) Use config YAML file (will generate new random problems based on settings)\n"
+    printf "(2) Use run JSON file (will use exact same problems as previous run)\n"
     local run_choice
     read -p "Select an option (1-2): " run_choice
     while [[ "$run_choice" != "1" && "$run_choice" != "2" ]]; do
-        echo "Invalid input. Please enter 1 or 2:"
+        printf "Invalid input. Please enter 1 or 2:\n"
         read -p "Select an option (1-2): " run_choice
     done
 
@@ -509,7 +510,7 @@ run_existing_benchmark() {
         config_file=$(get_valid_path "Please enter the path to the config YAML file: " "file" ".yaml")
         
         # Generate new problems based on config settings
-        echo "Generating new problems based on config settings..."
+        printf "Generating new problems based on config settings...\n"
         mapfile -t selected_problem_ids < <(generate_problems_from_config "$config_file")
         
         local run_timestamp=$(date +%Y%m%d_%H%M%S)
@@ -517,11 +518,11 @@ run_existing_benchmark() {
         mkdir -p "$run_dir"
         local run_file="$run_dir/run_${run_timestamp}.json"
         jq -n --arg config_path "$config_file" --argjson problem_ids "$(printf '%s\n' "${selected_problem_ids[@]}" | jq -R . | jq -s .)" '{config_path: $config_path, problem_ids: $problem_ids}' > "$run_file"
-        echo "Run file created: $run_file"
-        echo "Selected $(echo "${selected_problem_ids[@]}" | wc -w) problems based on config settings"
-        echo -e "\033[1;32mRun directory created:\033[0m $run_dir"
-        echo -e "\033[1;32mRun file created:\033[0m $run_file"
-        echo -e "\033[1;34mSelected $(echo "${selected_problem_ids[@]}" | wc -w) problems based on config settings\033[0m"
+        printf "Run file created: $run_file\n"
+        printf "Selected $(echo "${selected_problem_ids[@]}" | wc -w) problems based on config settings\n"
+        printf "\033[1;32mRun directory created:\033[0m $run_dir\n"
+        printf "\033[1;32mRun file created:\033[0m $run_file\n"
+        printf "\033[1;34mSelected $(echo "${selected_problem_ids[@]}" | wc -w) problems based on config settings\033[0m\n"
         python "$SCRIPT_DIR/python_scripts/run_benchmark.py" --benchmark_file "$run_file"
     elif [[ "$run_choice" == "2" ]]; then
         # Use run JSON file
@@ -536,7 +537,7 @@ run_existing_benchmark() {
         
         # Verify the config file exists
         if [[ ! -f "$config_path" ]]; then
-            echo "Error: Config file referenced in run file does not exist: $config_path"
+            printf "Error: Config file referenced in run file does not exist: $config_path\n"
             exit 1
         fi
         
@@ -546,11 +547,11 @@ run_existing_benchmark() {
         mkdir -p "$run_dir"
         local run_file="$run_dir/run_${run_timestamp}.json"
         jq -n --arg config_path "$config_path" --argjson problem_ids "$problem_ids" '{config_path: $config_path, problem_ids: $problem_ids}' > "$run_file"
-        echo "New run file created: $run_file"
-        echo "Using same problems as previous run: $(echo "$problem_ids" | jq -r '. | length') problems"
-        echo -e "\033[1;32mRun directory created:\033[0m $run_dir"
-        echo -e "\033[1;32mNew run file created:\033[0m $run_file"
-        echo -e "\033[1;34mUsing same problems as previous run: $(echo "$problem_ids" | jq -r '. | length') problems\033[0m"
+        printf "New run file created: $run_file\n"
+        printf "Using same problems as previous run: $(echo "$problem_ids" | jq -r '. | length') problems\n"
+        printf "\033[1;32mRun directory created:\033[0m $run_dir\n"
+        printf "\033[1;32mNew run file created:\033[0m $run_file\n"
+        printf "\033[1;34mUsing same problems as previous run: $(echo "$problem_ids" | jq -r '. | length') problems\033[0m\n"
         python "$SCRIPT_DIR/python_scripts/run_benchmark.py" --benchmark_file "$run_file"
     fi
 }
