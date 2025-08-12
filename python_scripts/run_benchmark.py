@@ -6,6 +6,10 @@ import pathlib
 from llm import prompt_wrapper, get_llm_response, find_llm_type
 from executor import run_test_cases
 from dotenv import load_dotenv
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
+import time
+import sys
 
 import datetime
 # load argument from command line
@@ -117,10 +121,132 @@ for llm_type in llm_types:
 
 benchmark_dict['results'] = {agent: {} for agent in agents}
 
+def process_single_task(task_data):
+    """Process a single (agent, problem_id) task"""
+    agent, problem_id, problems, llm_token_prices, test_cases_folder_path, run_base_dir = task_data
+    
+    # Load environment variables in each thread
+    load_dotenv(dotenv_path=pathlib.Path(__file__).parent.parent / "config" / ".env")
+    
+    # Recreate LLM clients inside each thread (can't share them across threads)
+    if agent.startswith('oneshot-'):
+        llm_type = 'oneshot'
+        engineer_model = agent[len('oneshot-'):]
+    elif agent == 'planning_and_control':
+        llm_type = 'planning_and_control'
+        engineer_model = None
+    else:
+        llm_type = find_llm_type(agent, llm_token_prices)
+        engineer_model = None
+    
+    # Create LLM clients for this thread
+    thread_llm_clients = {}
+    if llm_type == 'openai_gpt':
+        try:
+            import openai
+            thread_llm_clients['openai_gpt'] = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+        except ImportError:
+            raise ImportError("OpenAI library is not installed. Please install it with 'pip install openai'.")
+    elif llm_type == 'anthropic_claude':
+        try:
+            import anthropic
+            thread_llm_clients['anthropic_claude'] = anthropic.Client(api_key=os.getenv('ANTHROPIC_API_KEY'))
+        except ImportError:
+            raise ImportError("Anthropic library is not installed. Please install it with 'pip install anthropic'.")
+    elif llm_type == 'google-gemini':
+        try:
+            from google import genai
+            thread_llm_clients['google-gemini'] = genai.Client(api_key=os.getenv('GOOGLE_GEMINI_API_KEY'))
+        except ImportError:
+            raise ImportError("Google Gemini library is not installed. Please install it with 'pip install google-generativeai'.")
+    elif llm_type in ['oneshot', 'planning_and_control']:
+        thread_llm_clients[llm_type] = None
+    else:
+        raise ValueError(f"Unsupported LLM type: {llm_type}")
+    
+    # Create agent directories if needed
+    if llm_type in ['oneshot', 'planning_and_control']:
+        agent_dir = run_base_dir / llm_type
+        agent_dir.mkdir(parents=True, exist_ok=True)
+        problem_dir = agent_dir / problem_id
+        problem_dir.mkdir(parents=True, exist_ok=True)
+        work_dir = str(problem_dir)
+    else:
+        work_dir = None
+    
+    # Process the problem
+    prompt = prompt_wrapper(problems[problem_id]['description'])
+    
+    if llm_type in ['oneshot', 'planning_and_control']:
+        llm_response = get_llm_response(prompt, agent, thread_llm_clients, llm_token_prices, work_dir=work_dir, engineer_model=engineer_model)
+        # For planning_and_control, override generated_code by reading from work_dir/control/codebase/*.py
+        if llm_type == 'planning_and_control':
+            control_codebase_dir = pathlib.Path(work_dir) / 'control' / 'codebase'
+            py_files = list(control_codebase_dir.glob('*.py'))
+            if py_files:
+                with open(py_files[0], 'r') as f:
+                    llm_response.generated_code = f.read()
+    else:
+        llm_response = get_llm_response(prompt, agent, thread_llm_clients, llm_token_prices)
+    
+    test_case_result = run_test_cases(llm_response.generated_code, pathlib.Path(test_cases_folder_path) / problem_id)
+    generation_info = llm_response.__dict__ if hasattr(llm_response, '__dict__') else llm_response
+    
+    result_data = {
+        'generation_info': generation_info,
+        'execution_info': test_case_result
+    }
+    
+    return agent, problem_id, result_data
 
+
+# Create tasks list: [(agent, problem_id), ...]
+tasks = []
 for agent in agents:
-    agent_idx = agents.index(agent) + 1
-    print(f"\n\033[1;34m---[ Agent {agent_idx}/{len(agents)}: {agent} ]---\033[0m")
+    for problem_id in problems.keys():
+        task_data = (agent, problem_id, problems, llm_token_prices, test_cases_folder_path, run_base_dir)
+        tasks.append(task_data)
+
+# Thread-safe progress tracking
+completed_tasks = 0
+total_tasks = len(tasks)
+progress_lock = threading.Lock()
+
+print(f"\n\033[1;33mStarting {total_tasks} tasks across {len(agents)} agents and {len(problems)} problems\033[0m")
+
+# Process tasks in parallel
+max_workers = min(8, os.cpu_count())  # Don't exceed CPU count
+start_time = time.time()
+
+with ThreadPoolExecutor(max_workers=max_workers) as executor:
+    # Submit all tasks
+    future_to_task = {executor.submit(process_single_task, task_data): task_data for task_data in tasks}
+    
+    # Collect results as they complete
+    for future in as_completed(future_to_task):
+        try:
+            agent, problem_id, result_data = future.result()
+            
+            # Thread-safe result storage
+            benchmark_dict['results'][agent][problem_id] = result_data
+            
+            # Thread-safe progress update
+            with progress_lock:
+                completed_tasks += 1
+                status = result_data['execution_info'].get("status", "system_error")
+                status_color = "\033[1;32m" if status == "success" else "\033[1;31m"
+                print(f"{status_color}Completed {completed_tasks}/{total_tasks}: {agent} - {problem_id} ({status})\033[0m")
+                
+        except Exception as exc:
+            task_data = future_to_task[future]
+            agent, problem_id = task_data[0], task_data[1]
+            print(f'\033[1;31mTask {agent}-{problem_id} generated an exception: {exc}\033[0m')
+
+end_time = time.time()
+print(f"\n\033[1;36mAll tasks completed in {end_time - start_time:.2f} seconds\033[0m")
+
+# Calculate agent summaries from collected results
+for agent in agents:
     agent_summary = {
         "total_generation_time": 0.0,
         "total_cost": 0.0,
@@ -135,64 +261,26 @@ for agent in agents:
     }
     correct_count = 0
     total_count = 0
-    problem_ids_list = list(problems.keys())
-    total_problems = len(problem_ids_list)
-
-    # Handle oneshot/planning_and_control agent naming
-    if agent.startswith('oneshot-'):
-        llm_type = 'oneshot'
-        engineer_model = agent[len('oneshot-'):]
-    elif agent == 'planning_and_control':
-        llm_type = 'planning_and_control'
-        engineer_model = None
-    else:
-        llm_type = find_llm_type(agent, llm_token_prices)
-        engineer_model = None
-
-    # Only create agent subfolder for oneshot and planning_and_control
-    if llm_type in ['oneshot', 'planning_and_control']:
-        agent_dir = run_base_dir / llm_type
-        agent_dir.mkdir(parents=True, exist_ok=True)
-    else:
-        agent_dir = None
-
-    for problem_idx, problem_id in enumerate(problem_ids_list, 1):
-        print(f"\033[1;32mProblem {problem_idx}/{total_problems}:\033[0m {problem_id}\n")
-        prompt = prompt_wrapper(problems[problem_id]['description'])
-        # For oneshot/planning_and_control, create a folder for each problem and set work_dir
-        if llm_type in ['oneshot', 'planning_and_control']:
-            problem_dir = agent_dir / problem_id
-            problem_dir.mkdir(parents=True, exist_ok=True)
-            work_dir = str(problem_dir)
-            llm_response = get_llm_response(prompt, agent, llm_clients, llm_token_prices, work_dir=work_dir, engineer_model=engineer_model)
-            # For planning_and_control, override generated_code by reading from work_dir/control/codebase/*.py
-            if llm_type == 'planning_and_control':
-                control_codebase_dir = pathlib.Path(work_dir) / 'control' / 'codebase'
-                py_files = list(control_codebase_dir.glob('*.py'))
-                if py_files:
-                    with open(py_files[0], 'r') as f:
-                        llm_response.generated_code = f.read()
-        else:
-            llm_response = get_llm_response(prompt, agent, llm_clients, llm_token_prices)
-        test_case_result = run_test_cases(llm_response.generated_code, pathlib.Path(test_cases_folder_path) / problem_id)
-        generation_info = llm_response.__dict__ if hasattr(llm_response, '__dict__') else llm_response
-        benchmark_dict['results'][agent][problem_id] = {
-            'generation_info': generation_info,
-            'execution_info': test_case_result
-        }
-        agent_summary["total_generation_time"] += generation_info.get("generation_time", 0.0)
-        agent_summary["total_cost"] += generation_info.get("generation_cost", 0.0)
-        status = test_case_result.get("status", "system_error")
-        total_count += 1
-        if status == "success":
-            correct_count += 1
-            print(f"\033[1;32mProblem {problem_id} PASSED!\033[0m")
-        else:
-            if status in agent_summary["number_per_failure_type"]:
-                agent_summary["number_per_failure_type"][status] += 1
+    
+    for problem_id in problems.keys():
+        if problem_id in benchmark_dict['results'][agent]:
+            result = benchmark_dict['results'][agent][problem_id]
+            generation_info = result['generation_info']
+            execution_info = result['execution_info']
+            
+            agent_summary["total_generation_time"] += generation_info.get("generation_time", 0.0)
+            agent_summary["total_cost"] += generation_info.get("generation_cost", 0.0)
+            status = execution_info.get("status", "system_error")
+            total_count += 1
+            
+            if status == "success":
+                correct_count += 1
             else:
-                agent_summary["number_per_failure_type"][status] = 1
-            print(f"\033[1;31mProblem {problem_id} FAILED with status: {status}\033[0m")
+                if status in agent_summary["number_per_failure_type"]:
+                    agent_summary["number_per_failure_type"][status] += 1
+                else:
+                    agent_summary["number_per_failure_type"][status] = 1
+    
     agent_summary["accuracy"] = round(100.0 * correct_count / total_count, 2) if total_count > 0 else 0.0
     benchmark_dict['results'][agent]['agent_summary'] = agent_summary
 
