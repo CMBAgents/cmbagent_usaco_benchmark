@@ -242,7 +242,8 @@ with ThreadPoolExecutor(max_workers=max_workers) as executor:
             print(f'\033[1;31mTask {agent}-{problem_id} generated an exception: {exc}\033[0m')
 
 end_time = time.time()
-print(f"\n\033[1;36mAll tasks completed in {end_time - start_time:.2f} seconds\033[0m")
+real_benchmark_time = end_time - start_time
+print(f"\n\033[1;36mAll tasks completed in {real_benchmark_time:.2f} seconds\033[0m")
 
 # Calculate agent summaries from collected results
 for agent in agents:
@@ -304,10 +305,12 @@ if len(agents) > 1:
 else:
     agent_comparison = None
 
+
 benchmark_summary = {
     "total_generation_cost": round(total_generation_cost, 6),
     "total_generation_time": round(total_generation_time, 3),
-    "agent_comparison": agent_comparison
+    "agent_comparison": agent_comparison,
+    "real_benchmark_time_with_multiprocessing": round(real_benchmark_time, 3)
 }
 benchmark_dict['results']['benchmark_summary'] = benchmark_summary
 
