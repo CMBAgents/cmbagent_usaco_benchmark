@@ -92,11 +92,11 @@ def find_llm_type(agent: str, llm_token_prices: dict) -> str:
 
 def calculate_generation_cost(prompt_tokens: int, completion_tokens: int, agent: str, llm_token_prices: dict) -> float:
     for category, models in llm_token_prices.items():
-        if agent in models:
+        if isinstance(models, dict) and agent in models:
             model_info = models[agent]
             input_price = model_info.get('input_price_per_1m', 0)
             output_price = model_info.get('output_price_per_1m', 0)
-            if category == 'openai_gpt' or category == 'anthropic_claude':
+            if category in ['openai_gpt', 'anthropic_claude', 'google-gemini']:
                 input_cost = (prompt_tokens / 1_000_000) * input_price
                 output_cost = (completion_tokens / 1_000_000) * output_price
                 return input_cost + output_cost
