@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 import time
-import sys
 
 import datetime
 # load argument from command line
