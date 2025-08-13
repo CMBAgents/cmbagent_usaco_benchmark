@@ -8,3 +8,4 @@ data/usaco_clean_307.json
 .env
 LIVE_OUTPUT.txt
 benchmark_output/
+pln_ctrl_307_data.py
