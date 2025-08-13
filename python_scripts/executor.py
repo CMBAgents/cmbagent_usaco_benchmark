@@ -25,7 +25,7 @@ def run_test_cases(generated_code: str, test_cases_folder_path: pathlib.Path) ->
         except Exception as e:
             queue.put(("error", str(e)))
 
-    TIMEOUT_SECONDS = 20
+    TIMEOUT_SECONDS = 30
     """
     Run the generated code against all test cases in the specified folder.
 

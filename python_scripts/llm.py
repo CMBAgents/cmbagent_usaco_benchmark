@@ -205,10 +205,10 @@ def get_llm_response(prompt: str, agent: str, llm_clients: dict, llm_token_price
                     max_n_attempts=3, # attemps of writing code after executing it
                     max_plan_steps=5,
                     engineer_model="gemini-2.5-pro",
-                    researcher_model="gpt-4.1-2025-04-14",
+                    # researcher_model="gpt-4.1-2025-04-14",
                     plan_reviewer_model="claude-sonnet-4-20250514",
                     plan_instructions=r"""
-Use engineer for whole analysis, and return final code with researcher at the very end. Plan must have between 3 and 5 steps.
+Use engineer for whole analysis. Plan must have between 3 and 5 steps.
 """,
                     work_dir=work_dir,
                     clear_work_dir=False
