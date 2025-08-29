@@ -26,7 +26,7 @@ run_base_dir.mkdir(parents=True, exist_ok=True)
 
 # Load .env from config directory
 load_dotenv(pathlib.Path(__file__).parent.parent / "config" / ".env")
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/mnt/p/stage/cmbagent_benchmark/cmbagent/camels-453517-7c2faf50eda2.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/mnt/p/stage/cmbagent_benchmark/cmbagent/gcp_credentials.json"
 
 # Start the benchmark
 print("\n\033[1;36m====================[ BENCHMARK RUNNER ]====================\033[0m")
@@ -207,9 +207,12 @@ for agent in agents:
         tasks.append(task_data)
 
 # Thread-safe progress tracking
+
 completed_tasks = 0
 total_tasks = len(tasks)
 progress_lock = threading.Lock()
+# Add a lock for file writing to avoid race conditions
+file_write_lock = threading.Lock()
 
 print(f"\n\033[1;33mStarting {total_tasks} tasks across {len(agents)} agents and {len(problems)} problems\033[0m")
 
@@ -225,17 +228,22 @@ with ThreadPoolExecutor(max_workers=max_workers) as executor:
     for future in as_completed(future_to_task):
         try:
             agent, problem_id, result_data = future.result()
-            
+
             # Thread-safe result storage
             benchmark_dict['results'][agent][problem_id] = result_data
-            
+
+            # Incremental file save after each result (thread-safe)
+            with file_write_lock:
+                with open(benchmark_file, 'w') as f:
+                    json.dump(benchmark_dict, f, indent=4)
+
             # Thread-safe progress update
             with progress_lock:
                 completed_tasks += 1
                 status = result_data['execution_info'].get("status", "system_error")
                 status_color = "\033[1;32m" if status == "success" else "\033[1;31m"
                 print(f"{status_color}Completed {completed_tasks}/{total_tasks}: {agent} - {problem_id} ({status})\033[0m")
-                
+
         except Exception as exc:
             task_data = future_to_task[future]
             agent, problem_id = task_data[0], task_data[1]
